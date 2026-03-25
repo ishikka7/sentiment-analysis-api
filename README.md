@@ -1,3 +1,6 @@
+> ⚠️ This repo is a starting point, not a solution. 
+> You will get stuck. That's the point. Google is your best friend.
+
 # Sentiment Analysis API
 
 > Analyze any text and return an emotion score in real time using a pre-trained NLP model.
