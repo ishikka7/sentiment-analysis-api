@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sentiment Analysis</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+ 
+    :root {
+      --bg: #f7f5f0;
+      --surface: #ffffff;
+      --border: #e8e4dc;
+      --border-dark: #d0cac0;
+      --text: #1a1814;
+      --muted: #6b6560;
+      --hint: #a09890;
+      --accent: #2d5a3d;
+      --accent-light: #e8f2eb;
+      --danger: #8b2c2c;
+      --danger-light: #fdf0f0;
+      --neutral: #4a4640;
+      --neutral-light: #f0ede8;
+      --positive-color: #2d5a3d;
+      --negative-color: #8b2c2c;
+      --neutral-color: #4a4640;
+    }
+ 
+    html { font-size: 16px; }
+ 
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 3rem 1.5rem 5rem;
+    }
+ 
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 3.5rem;
+      animation: fadeUp 0.6s ease both;
+    }
+ 
+    .eyebrow {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--hint);
+      margin-bottom: 1rem;
+    }
+ 
+    h1 {
+      font-family: 'Instrument Serif', serif;
+      font-size: clamp(2.2rem, 5vw, 3.2rem);
+      font-weight: 400;
+      line-height: 1.15;
+      color: var(--text);
+      margin-bottom: 0.75rem;
+    }
+ 
+    h1 em {
+      font-style: italic;
+      color: var(--muted);
+    }
+ 
+    .subtitle {
+      font-size: 0.95rem;
+      color: var(--muted);
+      font-weight: 300;
+      max-width: 360px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+ 
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      width: 100%;
+      max-width: 580px;
+      padding: 2rem;
+      animation: fadeUp 0.6s ease 0.1s both;
+    }
+ 
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      gap: 2px;
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 3px;
+      margin-bottom: 1.75rem;
+    }
+ 
+    .tab {
+      flex: 1;
+      padding: 7px 12px;
+      border: none;
+      background: none;
+      border-radius: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+ 
+    .tab.active {
+      background: var(--surface);
+      color: var(--text);
+      border: 1px solid var(--border);
+      font-weight: 500;
+    }
+ 
+    /* ── Textarea ── */
+    .field-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 0.03em;
+      margin-bottom: 8px;
+      display: block;
+    }
+ 
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 300;
+      line-height: 1.65;
+      color: var(--text);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+ 
+    textarea::placeholder { color: var(--hint); }
+ 
+    textarea:focus {
+      border-color: var(--border-dark);
+      box-shadow: 0 0 0 3px rgba(45, 90, 61, 0.07);
+    }
+ 
+    /* ── Batch inputs ── */
+    #batchInputs { display: flex; flex-direction: column; gap: 8px; }
+ 
+    #batchInputs textarea { min-height: 72px; }
+ 
+    .add-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: none;
+      border: 1px dashed var(--border-dark);
+      border-radius: 8px;
+      padding: 10px 14px;
+      width: 100%;
+      cursor: pointer;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--hint);
+      transition: all 0.2s;
+      margin-top: 4px;
+    }
+ 
+    .add-row:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-light); }
+ 
+    /* ── Samples ── */
+    .samples {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 12px;
+      margin-bottom: 1.5rem;
+    }
+ 
+    .sample {
+      font-size: 12px;
+      font-weight: 300;
+      padding: 5px 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--surface);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.18s;
+      white-space: nowrap;
+    }
+ 
+    .sample:hover {
+      border-color: var(--border-dark);
+      color: var(--text);
+      background: var(--bg);
+    }
+ 
+    /* ── Button ── */
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 1.25rem;
+    }
+ 
+    .btn-analyze {
+      flex: 1;
+      padding: 12px 20px;
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      letter-spacing: 0.01em;
+    }
+ 
+    .btn-analyze:hover { opacity: 0.85; }
+    .btn-analyze:active { transform: scale(0.98); }
+    .btn-analyze:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+ 
+    .btn-clear {
+      padding: 12px 16px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+ 
+    .btn-clear:hover { border-color: var(--border-dark); color: var(--text); }
+ 
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 1.75rem 0;
+    }
+ 
+    /* ── Result ── */
+    #result { display: none; }
+ 
+    .result-label {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 1.25rem;
+    }
+ 
+    .sentiment-word {
+      font-family: 'Instrument Serif', serif;
+      font-size: 2.2rem;
+      font-weight: 400;
+      line-height: 1;
+    }
+ 
+    .sentiment-word.POSITIVE { color: var(--positive-color); }
+    .sentiment-word.NEGATIVE { color: var(--negative-color); }
+    .sentiment-word.NEUTRAL  { color: var(--neutral-color); }
+ 
+    .sentiment-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+ 
+    .sentiment-icon.POSITIVE { background: var(--accent-light); }
+    .sentiment-icon.NEGATIVE { background: var(--danger-light); }
+    .sentiment-icon.NEUTRAL  { background: var(--neutral-light); }
+ 
+    /* Confidence bar */
+    .conf-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+ 
+    .conf-label {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--hint);
+      letter-spacing: 0.05em;
+    }
+ 
+    .conf-pct {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+    }
+ 
+    .bar-track {
+      height: 5px;
+      background: var(--bg);
+      border-radius: 3px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+    }
+ 
+    .bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.6s cubic-bezier(.23,1,.32,1);
+    }
+ 
+    .bar-fill.POSITIVE { background: var(--accent); }
+    .bar-fill.NEGATIVE { background: var(--danger); }
+    .bar-fill.NEUTRAL  { background: var(--neutral); }
+ 
+    /* JSON snippet */
+    .json-wrap {
+      margin-top: 1.25rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      line-height: 1.7;
+      color: var(--muted);
+      overflow-x: auto;
+    }
+ 
+    .jk { color: var(--hint); }
+    .jv-str { color: var(--accent); }
+    .jv-num { color: #7a5c2a; }
+ 
+    /* Batch results */
+    .batch-result-list { display: flex; flex-direction: column; gap: 8px; }
+ 
+    .batch-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+    }
+ 
+    .batch-text {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 300;
+      color: var(--muted);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+ 
+    .mini-tag {
+      font-family: 'DM Mono', monospace;
+      font-size: 10px;
+      font-weight: 500;
+      padding: 3px 8px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+ 
+    .mini-tag.POSITIVE { background: var(--accent-light); color: var(--accent); }
+    .mini-tag.NEGATIVE { background: var(--danger-light); color: var(--danger); }
+    .mini-tag.NEUTRAL  { background: var(--neutral-light); color: var(--neutral); }
+ 
+    .mini-score {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--hint);
+      min-width: 32px;
+      text-align: right;
+    }
+ 
+    /* Error */
+    .error-msg {
+      font-size: 13px;
+      color: var(--danger);
+      background: var(--danger-light);
+      border: 1px solid #f0d0d0;
+      border-radius: 8px;
+      padding: 10px 14px;
+      margin-top: 1rem;
+      display: none;
+    }
+ 
+    /* Health strip */
+    .health-strip {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      background: var(--accent-light);
+      border: 1px solid #c0ddc8;
+      border-radius: 8px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+ 
+    .health-strip:hover { opacity: 0.8; }
+ 
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease infinite;
+    }
+ 
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+ 
+    /* Footer */
+    footer {
+      margin-top: 3rem;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--hint);
+      text-align: center;
+      animation: fadeUp 0.6s ease 0.3s both;
+    }
+ 
+    footer a { color: var(--hint); text-decoration: underline; }
+ 
+    /* Animations */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+ 
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+ 
+    @keyframes spin { to { transform: rotate(360deg); } }
+ 
+    @media (max-width: 480px) {
+      body { padding: 2rem 1rem 4rem; }
+      .card { padding: 1.5rem; }
+      h1 { font-size: 2rem; }
+    }
+  </style>
+</head>
+<body>
+ 
+  <header>
+    <p class="eyebrow">NLP · distilbert-base-uncased</p>
+    <h1>How does it <em>feel?</em></h1>
+    <p class="subtitle">Paste any text and get an instant sentiment reading from a pre-trained model.</p>
+  </header>
+ 
+  <div class="card">
+ 
+    <!-- Health ping -->
+    <div class="health-strip" onclick="pingHealth()" id="healthStrip">
+      <span class="dot"></span>
+      <span id="healthText">GET /health — click to ping</span>
+    </div>
+ 
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab active" id="tabSingle" onclick="switchTab('single')">Single</button>
+      <button class="tab" id="tabBatch" onclick="switchTab('batch')">Batch</button>
+    </div>
+ 
+    <!-- Single mode -->
+    <div id="singleMode">
+      <label class="field-label">Your text</label>
+      <textarea id="singleInput" placeholder="Type or paste something here…"></textarea>
+      <div class="samples">
+        <span class="sample" onclick="useSample(this)">I absolutely loved it</span>
+        <span class="sample" onclick="useSample(this)">Worst experience ever</span>
+        <span class="sample" onclick="useSample(this)">It was okay, nothing special</span>
+        <span class="sample" onclick="useSample(this)">This made my whole day</span>
+        <span class="sample" onclick="useSample(this)">I'm not sure how I feel</span>
+      </div>
+    </div>
+ 
+    <!-- Batch mode -->
+    <div id="batchMode" style="display:none">
+      <label class="field-label">Texts to analyze</label>
+      <div id="batchInputs">
+        <textarea class="batch-item" placeholder="Text 1…"></textarea>
+        <textarea class="batch-item" placeholder="Text 2…"></textarea>
+      </div>
+      <button class="add-row" onclick="addBatchRow()">+ add another</button>
+    </div>
+ 
+    <div class="btn-row">
+      <button class="btn-analyze" id="analyzeBtn" onclick="analyze()">Analyze</button>
+      <button class="btn-clear" onclick="clearAll()">Clear</button>
+    </div>
+ 
+    <div class="error-msg" id="errorMsg"></div>
+ 
+    <!-- Result -->
+    <div id="result">
+      <div class="divider"></div>
+ 
+      <!-- Single result -->
+      <div id="singleResult">
+        <div class="result-label">
+          <div class="sentiment-icon" id="resultIcon">—</div>
+          <div>
+            <div class="sentiment-word" id="resultWord">—</div>
+          </div>
+        </div>
+        <div class="conf-row">
+          <span class="conf-label">CONFIDENCE</span>
+          <span class="conf-pct" id="resultPct">—</span>
+        </div>
+        <div class="bar-track">
+          <div class="bar-fill" id="resultBar" style="width:0%"></div>
+        </div>
+        <div class="json-wrap" id="resultJson"></div>
+      </div>
+ 
+      <!-- Batch result -->
+      <div id="batchResult" style="display:none">
+        <div class="batch-result-list" id="batchResultList"></div>
+      </div>
+    </div>
+ 
+  </div>
+ 
+  <footer>
+    <a href="/docs" target="_blank">API docs →</a> &nbsp;·&nbsp; running on localhost:8000
+  </footer>
+ 
+<script>
+  const API = 'http://localhost:8000';
+  let mode = 'single';
+ 
+  function switchTab(t) {
+    mode = t;
+    document.getElementById('singleMode').style.display = t === 'single' ? 'block' : 'none';
+    document.getElementById('batchMode').style.display  = t === 'batch'  ? 'block' : 'none';
+    document.getElementById('tabSingle').classList.toggle('active', t === 'single');
+    document.getElementById('tabBatch').classList.toggle('active', t === 'batch');
+    hideResult(); hideError();
+  }
+ 
+  function useSample(el) {
+    document.getElementById('singleInput').value = el.textContent;
+  }
+ 
+  function addBatchRow() {
+    const wrap = document.getElementById('batchInputs');
+    const n = wrap.querySelectorAll('textarea').length + 1;
+    const ta = document.createElement('textarea');
+    ta.className = 'batch-item';
+    ta.placeholder = `Text ${n}…`;
+    wrap.appendChild(ta);
+  }
+ 
+  function clearAll() {
+    document.getElementById('singleInput').value = '';
+    document.querySelectorAll('.batch-item').forEach(t => t.value = '');
+    hideResult(); hideError();
+  }
+ 
+  function hideResult() {
+    document.getElementById('result').style.display = 'none';
+    document.getElementById('singleResult').style.display = 'block';
+    document.getElementById('batchResult').style.display = 'none';
+  }
+ 
+  function hideError() {
+    const e = document.getElementById('errorMsg');
+    e.style.display = 'none'; e.textContent = '';
+  }
+ 
+  function showError(msg) {
+    const e = document.getElementById('errorMsg');
+    e.textContent = msg; e.style.display = 'block';
+  }
+ 
+  function setLoading(on) {
+    const btn = document.getElementById('analyzeBtn');
+    btn.disabled = on;
+    btn.innerHTML = on
+      ? '<span class="spinner"></span>Analyzing…'
+      : 'Analyze';
+  }
+ 
+  const icons = { POSITIVE: '✦', NEGATIVE: '✕', NEUTRAL: '◎' };
+ 
+  function renderSingle(data) {
+    const pct = Math.round(data.score * 100);
+    const icon = document.getElementById('resultIcon');
+    const word = document.getElementById('resultWord');
+    const bar  = document.getElementById('resultBar');
+    const pctEl= document.getElementById('resultPct');
+    const json = document.getElementById('resultJson');
+ 
+    icon.textContent = icons[data.label] || '—';
+    icon.className = `sentiment-icon ${data.label}`;
+    word.textContent = data.label.charAt(0) + data.label.slice(1).toLowerCase();
+    word.className = `sentiment-word ${data.label}`;
+    pctEl.textContent = pct + '%';
+    bar.className = `bar-fill ${data.label}`;
+    setTimeout(() => bar.style.width = pct + '%', 30);
+ 
+    json.innerHTML = `{
+  <span class="jk">"text"</span>: <span class="jv-str">"${escHtml(data.text)}"</span>,
+  <span class="jk">"label"</span>: <span class="jv-str">"${data.label}"</span>,
+  <span class="jk">"score"</span>: <span class="jv-num">${data.score}</span>
+}`;
+ 
+    document.getElementById('singleResult').style.display = 'block';
+    document.getElementById('batchResult').style.display  = 'none';
+    document.getElementById('result').style.display = 'block';
+  }
+ 
+  function renderBatch(results) {
+    const list = document.getElementById('batchResultList');
+    list.innerHTML = results.map(r => `
+      <div class="batch-row">
+        <span class="batch-text">${escHtml(r.text)}</span>
+        <span class="mini-tag ${r.label}">${r.label}</span>
+        <span class="mini-score">${Math.round(r.score * 100)}%</span>
+      </div>
+    `).join('');
+    document.getElementById('singleResult').style.display = 'none';
+    document.getElementById('batchResult').style.display  = 'block';
+    document.getElementById('result').style.display = 'block';
+  }
+ 
+  async function analyze() {
+    hideError(); hideResult();
+    if (mode === 'single') {
+      const text = document.getElementById('singleInput').value.trim();
+      if (!text) { showError('Please enter some text first.'); return; }
+      setLoading(true);
+      try {
+        const r = await fetch(API + '/analyze', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        const data = await r.json();
+        if (!r.ok) { showError(data.detail || 'API error ' + r.status); return; }
+        renderSingle(data);
+      } catch(e) {
+        showError('Cannot reach the API. Make sure uvicorn is running.');
+      } finally { setLoading(false); }
+ 
+    } else {
+      const texts = Array.from(document.querySelectorAll('.batch-item'))
+        .map(t => t.value.trim()).filter(Boolean);
+      if (!texts.length) { showError('Add at least one text.'); return; }
+      setLoading(true);
+      try {
+        const r = await fetch(API + '/analyze/batch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ texts })
+        });
+        const data = await r.json();
+        if (!r.ok) { showError(data.detail || 'API error ' + r.status); return; }
+        renderBatch(data.results);
+      } catch(e) {
+        showError('Cannot reach the API. Make sure uvicorn is running.');
+      } finally { setLoading(false); }
+    }
+  }
+ 
+  async function pingHealth() {
+    const el = document.getElementById('healthText');
+    el.textContent = 'pinging…';
+    try {
+      const r = await fetch(API + '/health');
+      const d = await r.json();
+      el.textContent = `✓ ${d.status} — ${d.message}`;
+    } catch(e) {
+      el.textContent = '✕ API unreachable';
+      document.getElementById('healthStrip').style.background = '#fdf0f0';
+      document.getElementById('healthStrip').style.borderColor = '#f0d0d0';
+      document.getElementById('healthStrip').style.color = '#8b2c2c';
+      document.querySelector('.dot').style.background = '#8b2c2c';
+    }
+  }
+ 
+  function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+ 
+  // Ping on load
+  window.addEventListener('load', pingHealth);
+</script>
+</body>
+</html>
