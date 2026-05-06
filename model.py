@@ -1,28 +1,17 @@
-from transformers import pipeline
-
-# Load the model once at startup — this avoids reloading on every request.
-# The default model is distilbert-base-uncased-finetuned-sst-2-english,
-# a lightweight but accurate sentiment classifier from HuggingFace.
-_sentiment_pipeline = pipeline("sentiment-analysis")
-
-NEUTRAL_THRESHOLD = 0.65  # Scores below this become NEUTRAL
-
+from textblob import TextBlob
 
 def analyze_sentiment(text: str) -> dict:
-    """
-    Run inference on a single text string.
+    blob = TextBlob(text)
+    score = blob.sentiment.polarity  # -1 to 1
 
-    Returns a dict with:
-      - text:  the original input
-      - label: POSITIVE | NEGATIVE | NEUTRAL
-      - score: confidence float (0–1)
-    """
-    raw = _sentiment_pipeline(text)[0]
-    label: str = raw["label"]        # "POSITIVE" or "NEGATIVE"
-    score: float = raw["score"]      # confidence for the predicted label
-
-    # Stretch goal: relabel low-confidence predictions as NEUTRAL
-    if score < NEUTRAL_THRESHOLD:
+    if score > 0.1:
+        label = "POSITIVE"
+        confidence = round((score + 1) / 2, 4)
+    elif score < -0.1:
+        label = "NEGATIVE"
+        confidence = round((1 - score) / 2, 4)
+    else:
         label = "NEUTRAL"
+        confidence = round(1 - abs(score), 4)
 
-    return {"text": text, "label": label, "score": round(score, 4)}
+    return {"text": text, "label": label, "score": confidence}
