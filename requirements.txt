@@ -1,4 +1,5 @@
 fastapi
 uvicorn[standard]
-textblob
+transformers
+torch
 pydantic

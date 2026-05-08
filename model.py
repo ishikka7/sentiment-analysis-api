@@ -1,17 +1,12 @@
-from textblob import TextBlob
+from transformers import pipeline
+
+_sentiment_pipeline = pipeline("sentiment-analysis")
+NEUTRAL_THRESHOLD = 0.65
 
 def analyze_sentiment(text: str) -> dict:
-    blob = TextBlob(text)
-    score = blob.sentiment.polarity  # -1 to 1
-
-    if score > 0.1:
-        label = "POSITIVE"
-        confidence = round((score + 1) / 2, 4)
-    elif score < -0.1:
-        label = "NEGATIVE"
-        confidence = round((1 - score) / 2, 4)
-    else:
+    raw = _sentiment_pipeline(text)[0]
+    label = raw["label"]
+    score = raw["score"]
+    if score < NEUTRAL_THRESHOLD:
         label = "NEUTRAL"
-        confidence = round(1 - abs(score), 4)
-
-    return {"text": text, "label": label, "score": confidence}
+    return {"text": text, "label": label, "score": round(score, 4)}
